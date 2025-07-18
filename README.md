@@ -1,6 +1,6 @@
-# Havelaer Stack
+# Havelaer Start
 
-Starter template for Vite, React, TanStack Router & ORPC.
+Personal starter template with Vite, React, TanStack Router & ORPC.
 
 Still in development.
 

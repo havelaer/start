@@ -1,53 +1,50 @@
-import path from 'node:path'
-import url from 'node:url'
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import { tanstackRouter } from '@tanstack/router-plugin/vite'
-import type { BuildEnvironmentOptions } from 'vite'
+import path from "node:path";
+import url from "node:url";
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import { tanstackRouter } from "@tanstack/router-plugin/vite";
+import type { BuildEnvironmentOptions } from "vite";
 
-const __filename = url.fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+const __filename = url.fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // SSR configuration
 const ssrBuildConfig: BuildEnvironmentOptions = {
   ssr: true,
-  outDir: 'dist/ssr',
+  outDir: "dist/ssr",
   ssrEmitAssets: true,
   copyPublicDir: false,
   emptyOutDir: true,
   rollupOptions: {
-    input: path.resolve(__dirname, 'src/entry-ssr.tsx'),
+    input: path.resolve(__dirname, "src/entry-ssr.tsx"),
     output: {
-      entryFileNames: '[name].js',
-      chunkFileNames: 'assets/[name]-[hash].js',
-      assetFileNames: 'assets/[name]-[hash][extname]',
+      entryFileNames: "[name].js",
+      chunkFileNames: "assets/[name]-[hash].js",
+      assetFileNames: "assets/[name]-[hash][extname]",
     },
   },
-}
+};
 
 // Client-specific configuration
 const clientBuildConfig: BuildEnvironmentOptions = {
-  outDir: 'dist/client',
+  outDir: "dist/client",
   emitAssets: true,
   copyPublicDir: true,
   emptyOutDir: true,
   rollupOptions: {
-    input: path.resolve(__dirname, 'src/entry-client.tsx'),
+    input: path.resolve(__dirname, "src/entry-client.tsx"),
     output: {
-      entryFileNames: 'static/[name].js',
-      chunkFileNames: 'static/assets/[name]-[hash].js',
-      assetFileNames: 'static/assets/[name]-[hash][extname]',
+      entryFileNames: "static/[name].js",
+      chunkFileNames: "static/assets/[name]-[hash].js",
+      assetFileNames: "static/assets/[name]-[hash][extname]",
     },
   },
-}
+};
 
 // https://vitejs.dev/config/
 export default defineConfig((configEnv) => {
   return {
-    plugins: [
-      tanstackRouter({ target: 'react', autoCodeSplitting: true }),
-      react(),
-    ],
+    plugins: [tanstackRouter({ target: "react", autoCodeSplitting: true }), react()],
     build: configEnv.isSsrBuild ? ssrBuildConfig : clientBuildConfig,
-  }
-})
+  };
+});

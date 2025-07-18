@@ -1,37 +1,37 @@
-import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
-import * as React from 'react'
+import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
+import * as React from "react";
 import {
   HeadContent,
   Link,
   Outlet,
   Scripts,
   createRootRouteWithContext,
-} from '@tanstack/react-router'
-import type { RouterContext } from '../routerContext'
+} from "@tanstack/react-router";
+import type { RouterContext } from "../routerContext";
 
 export const Route = createRootRouteWithContext<RouterContext>()({
   head: () => ({
-    links: [{ rel: 'icon', href: '/images/favicon.ico' }],
+    links: [{ rel: "icon", href: "/images/favicon.ico" }],
     meta: [
       {
-        title: 'TanStack Router SSR Basic File Based Streaming',
+        title: "TanStack Router SSR Basic File Based Streaming",
       },
       {
-        charSet: 'UTF-8',
+        charSet: "UTF-8",
       },
       {
-        name: 'viewport',
-        content: 'width=device-width, initial-scale=1.0',
+        name: "viewport",
+        content: "width=device-width, initial-scale=1.0",
       },
     ],
     scripts: [
       {
-        src: 'https://unpkg.com/@tailwindcss/browser@4',
+        src: "https://unpkg.com/@tailwindcss/browser@4",
       },
       ...(!import.meta.env.PROD
         ? [
             {
-              type: 'module',
+              type: "module",
               children: `import RefreshRuntime from "/@react-refresh"
   RefreshRuntime.injectIntoGlobalHook(window)
   window.$RefreshReg$ = () => {}
@@ -39,21 +39,19 @@ export const Route = createRootRouteWithContext<RouterContext>()({
   window.__vite_plugin_react_preamble_installed__ = true`,
             },
             {
-              type: 'module',
-              src: '/@vite/client',
+              type: "module",
+              src: "/@vite/client",
             },
           ]
         : []),
       {
-        type: 'module',
-        src: import.meta.env.PROD
-          ? '/static/entry-client.js'
-          : '/src/entry-client.tsx',
+        type: "module",
+        src: import.meta.env.PROD ? "/static/entry-client.js" : "/src/entry-client.tsx",
       },
     ],
   }),
   component: RootComponent,
-})
+});
 
 function RootComponent() {
   return (
@@ -66,24 +64,24 @@ function RootComponent() {
           <Link
             to="/"
             activeProps={{
-              className: 'font-bold',
+              className: "font-bold",
             }}
             activeOptions={{ exact: true }}
           >
             Home
-          </Link>{' '}
+          </Link>{" "}
           <Link
             to="/posts"
             activeProps={{
-              className: 'font-bold',
+              className: "font-bold",
             }}
           >
             Posts
-          </Link>{' '}
+          </Link>{" "}
           <Link
             to="/error"
             activeProps={{
-              className: 'font-bold',
+              className: "font-bold",
             }}
           >
             Error
@@ -95,5 +93,5 @@ function RootComponent() {
         <Scripts />
       </body>
     </html>
-  )
+  );
 }

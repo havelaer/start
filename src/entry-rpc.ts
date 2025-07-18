@@ -4,26 +4,26 @@ import type express from "express";
 import { router } from "./rpc";
 
 const rpcHandler = new RPCHandler(router, {
-	plugins: [new CORSPlugin()],
+  plugins: [new CORSPlugin()],
 });
 
 export async function handler({
-	req,
-	res,
-	next,
+  req,
+  res,
+  next,
 }: {
-	req: express.Request;
-	res: express.Response;
-	next: express.NextFunction;
+  req: express.Request;
+  res: express.Response;
+  next: express.NextFunction;
 }) {
-	const { matched } = await rpcHandler.handle(req, res, {
-		prefix: "/rpc",
-		context: {},
-	});
+  const { matched } = await rpcHandler.handle(req, res, {
+    prefix: "/rpc",
+    context: {},
+  });
 
-	if (matched) {
-		return;
-	}
+  if (matched) {
+    return;
+  }
 
-	next();
+  next();
 }
