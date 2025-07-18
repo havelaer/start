@@ -1,0 +1,40 @@
+{
+  "name": "havelaer-start",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node server",
+    "build": "npm run build:client && npm run build:server",
+    "build:client": "vite build",
+    "build:server": "vite build --ssr",
+    "serve": "NODE_ENV=production node server",
+    "debug": "node --inspect-brk server"
+  },
+  "engines": {
+    "node": ">=21"
+  },
+  "dependencies": {
+    "@orpc/client": "^1.7.3",
+    "@orpc/server": "^1.7.3",
+    "@orpc/tanstack-query": "^1.7.3",
+    "@tanstack/react-router": "^1.128.0",
+    "@tanstack/router-plugin": "^1.128.0",
+    "compression": "^1.7.5",
+    "express": "^4.21.2",
+    "get-port": "^7.1.0",
+    "isbot": "^5.1.22",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "zod": "^4.0.5"
+  },
+  "devDependencies": {
+    "@tanstack/react-router-devtools": "^1.128.0",
+    "@types/express": "^4.17.21",
+    "@types/react": "^19.0.8",
+    "@types/react-dom": "^19.0.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "jiti": "^2.4.2",
+    "typescript": "^5.7.2",
+    "vite": "^6.3.5"
+  }
+}
