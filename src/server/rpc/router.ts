@@ -13,7 +13,7 @@ const PostTypeSchema = z.object({
   body: z.string(),
 });
 
-export const listPosts = os.handler(async () => {
+const listPosts = os.handler(async () => {
   console.info("Server: Fetching posts...");
   const posts = await fetch("https://jsonplaceholder.typicode.com/posts")
     .then((d) => d.json() as Promise<Array<PostType>>)
@@ -22,7 +22,7 @@ export const listPosts = os.handler(async () => {
   return posts;
 });
 
-export const detailPost = os.input(PostTypeSchema.pick({ id: true })).handler(async ({ input }) => {
+const detailPost = os.input(PostTypeSchema.pick({ id: true })).handler(async ({ input }) => {
   console.info("Server: Fetching post detail...", input.id);
   const res = await fetch(`https://jsonplaceholder.typicode.com/posts/${input.id}`);
 
@@ -31,7 +31,7 @@ export const detailPost = os.input(PostTypeSchema.pick({ id: true })).handler(as
   return res.json() as Promise<PostType>;
 });
 
-export const router = {
+export const rpcRouter = {
   posts: {
     list: listPosts,
     detail: detailPost,

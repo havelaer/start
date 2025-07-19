@@ -1,5 +1,4 @@
 import { Await, createFileRoute } from "@tanstack/react-router";
-import * as React from "react";
 
 export const Route = createFileRoute("/")({
   loader: () => ({

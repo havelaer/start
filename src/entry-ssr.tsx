@@ -1,3 +1,4 @@
+import "./server/rpc/client";
 import { pipeline } from "node:stream/promises";
 import {
   createRequestHandler,
@@ -5,7 +6,6 @@ import {
   renderRouterToStream,
 } from "@tanstack/react-router/ssr/server";
 import type express from "express";
-import "./fetch-polyfill";
 import { createRouter } from "./router";
 
 export async function handler({

@@ -1,9 +1,9 @@
 import { RPCHandler } from "@orpc/server/node";
 import { CORSPlugin } from "@orpc/server/plugins";
 import type express from "express";
-import { router } from "./rpc";
+import { rpcRouter } from "./server/rpc/router";
 
-const rpcHandler = new RPCHandler(router, {
+const rpcHandler = new RPCHandler(rpcRouter, {
   plugins: [new CORSPlugin()],
 });
 

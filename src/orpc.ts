@@ -1,19 +1,23 @@
-import { createORPCClient, onError } from "@orpc/client";
+import { createORPCClient } from "@orpc/client";
 import { RPCLink } from "@orpc/client/fetch";
 import type { RouterClient } from "@orpc/server";
-import type { router } from "./rpc";
+import type { rpcRouter } from "./server/rpc/router";
+
+declare global {
+  var $client: RouterClient<typeof rpcRouter> | undefined;
+}
 
 const link = new RPCLink({
-  url: "http://localhost:3000/rpc",
-  headers: () => ({
-    authorization: "Bearer token",
-  }),
-  interceptors: [
-    onError((error) => {
-      console.error(error);
-    }),
-  ],
+  url: () => {
+    if (typeof window === "undefined") {
+      throw new Error("RPCLink is not allowed on the server side.");
+    }
+
+    return `${window.location.origin}/rpc`;
+  },
 });
 
-// Create a client for your router
-export const client: RouterClient<typeof router> = createORPCClient(link);
+/**
+ * Fallback to client-side client if server-side client is not available.
+ */
+export const client: RouterClient<typeof rpcRouter> = globalThis.$client ?? createORPCClient(link);

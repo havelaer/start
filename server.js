@@ -73,7 +73,7 @@ export async function createServer(
     entryRPC.handler({ req, res, next });
   });
 
-  app.use("*", async (req, res) => {
+  app.use("*", async (req, res, next) => {
     try {
       const url = req.originalUrl;
 
@@ -100,6 +100,7 @@ export async function createServer(
       })();
 
       console.info("Rendering: ", url, "...");
+
       entrySSR.handler({ req, res, head: viteHead });
     } catch (e) {
       !isProd && vite.ssrFixStacktrace(e);
