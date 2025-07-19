@@ -101,7 +101,7 @@ export async function createServer(
 
       console.info("Rendering: ", url, "...");
 
-      entrySSR.handler({ req, res, head: viteHead });
+      await entrySSR.handler({ req, res, head: viteHead });
     } catch (e) {
       !isProd && vite.ssrFixStacktrace(e);
       console.info(e.stack);
