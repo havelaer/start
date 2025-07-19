@@ -1,9 +1,9 @@
 import path from "node:path";
 import url from "node:url";
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
+import react from "@vitejs/plugin-react";
 import type { BuildEnvironmentOptions } from "vite";
+import { defineConfig } from "vite";
 
 const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

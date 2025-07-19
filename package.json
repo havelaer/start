@@ -8,7 +8,8 @@
     "build:client": "vite build",
     "build:server": "vite build --ssr",
     "serve": "NODE_ENV=production node server",
-    "debug": "node --inspect-brk server"
+    "debug": "node --inspect-brk server",
+    "lint": "biome check ."
   },
   "engines": {
     "node": ">=21"

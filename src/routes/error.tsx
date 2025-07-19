@@ -1,5 +1,4 @@
 import { Await, createFileRoute } from "@tanstack/react-router";
-import * as React from "react";
 
 async function loadData() {
   await new Promise((r) => setTimeout(r, 2000));

@@ -1,7 +1,7 @@
-import express from "express";
-import getPort, { portNumbers } from "get-port";
 import path from "node:path";
 import * as zlib from "node:zlib";
+import express from "express";
+import getPort, { portNumbers } from "get-port";
 
 const isTest = process.env.NODE_ENV === "test" || !!process.env.VITE_TEST_BUILD;
 
@@ -73,7 +73,7 @@ export async function createServer(
     entryRPC.handler({ req, res, next });
   });
 
-  app.use("*", async (req, res, next) => {
+  app.use("*", async (req, res, _next) => {
     try {
       const url = req.originalUrl;
 
