@@ -1,50 +1,17 @@
-import path from "node:path";
-import url from "node:url";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import react from "@vitejs/plugin-react";
-import type { BuildEnvironmentOptions } from "vite";
 import { defineConfig } from "vite";
-
-const __filename = url.fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// SSR configuration
-const ssrBuildConfig: BuildEnvironmentOptions = {
-  ssr: true,
-  outDir: "dist/ssr",
-  ssrEmitAssets: true,
-  copyPublicDir: false,
-  emptyOutDir: true,
-  rollupOptions: {
-    input: path.resolve(__dirname, "src/entry-ssr.tsx"),
-    output: {
-      entryFileNames: "[name].js",
-      chunkFileNames: "assets/[name]-[hash].js",
-      assetFileNames: "assets/[name]-[hash][extname]",
-    },
-  },
-};
-
-// Client-specific configuration
-const clientBuildConfig: BuildEnvironmentOptions = {
-  outDir: "dist/client",
-  emitAssets: true,
-  copyPublicDir: true,
-  emptyOutDir: true,
-  rollupOptions: {
-    input: path.resolve(__dirname, "src/entry-client.tsx"),
-    output: {
-      entryFileNames: "static/[name].js",
-      chunkFileNames: "static/assets/[name]-[hash].js",
-      assetFileNames: "static/assets/[name]-[hash][extname]",
-    },
-  },
-};
+import vlotPlugin from "./plugin";
 
 // https://vitejs.dev/config/
-export default defineConfig((configEnv) => {
-  return {
-    plugins: [tanstackRouter({ target: "react", autoCodeSplitting: true }), react()],
-    build: configEnv.isSsrBuild ? ssrBuildConfig : clientBuildConfig,
-  };
+export default defineConfig({
+  plugins: [
+    tanstackRouter({ target: "react", autoCodeSplitting: true }), 
+    react(), 
+    vlotPlugin({
+      clientEntry: "src/entry-client.tsx",
+      ssrEntry: "src/entry-ssr.tsx",
+      rpcEntry: "src/entry-rpc.ts",
+    }),
+  ],
 });

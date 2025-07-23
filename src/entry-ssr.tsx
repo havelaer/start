@@ -7,6 +7,8 @@ import {
 } from "@tanstack/react-router/ssr/server";
 import type express from "express";
 import { createRouter } from "./router";
+import { Connect } from "vite";
+import { IncomingMessage, ServerResponse } from "node:http";
 
 export async function handler({
   req,
@@ -14,11 +16,11 @@ export async function handler({
   head,
 }: {
   head: string;
-  req: express.Request;
-  res: express.Response;
+  req: Connect.IncomingMessage;
+  res: ServerResponse<IncomingMessage>;
 }) {
   // Convert the express request to a fetch request
-  const url = new URL(req.originalUrl || req.url, "https://localhost:3000").href;
+  const url = new URL(req.originalUrl || req.url!, "https://localhost:3000").href;
 
   const request = new Request(url, {
     method: req.method,
@@ -60,7 +62,7 @@ export async function handler({
 
   // Convert the fetch response back to an express response
   res.statusMessage = response.statusText;
-  res.status(response.status);
+  res.statusCode = response.status;
 
   response.headers.forEach((value, name) => {
     res.setHeader(name, value);
