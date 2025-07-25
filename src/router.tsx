@@ -6,7 +6,7 @@ export function createRouter() {
   return createReactRouter({
     routeTree,
     context: {
-      head: "",
+      headScripts: [],
       rpc: client,
     },
     defaultPreload: "intent",
@@ -14,8 +14,8 @@ export function createRouter() {
   });
 }
 
-// declare module "@tanstack/react-router" {
-//   interface Register {
-//     router: ReturnType<typeof createRouter>;
-//   }
-// }
+declare module "@tanstack/react-router" {
+  interface Register {
+    router: ReturnType<typeof createRouter>;
+  }
+}

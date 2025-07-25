@@ -1,17 +1,53 @@
 import fs from "node:fs/promises";
+import type { IncomingMessage, ServerResponse } from "node:http";
 import path from "node:path";
 import { createServerModuleRunner, type Plugin, type ViteDevServer } from "vite";
+import { serve, getRequestListener, type ServerType } from "@hono/node-server";
+
+export type ServerEntryHandler = (req: Request) => Promise<Response>;
+
+type EntryConfig = {
+  entry: string;
+};
 
 type Options = {
-  clientEntry: string;
-  ssrEntry: string;
-  rpcEntry: string;
+  client: EntryConfig;
+  ssr: EntryConfig;
+  rpc: EntryConfig;
 };
 
 const postfixRE = /[?#].*$/;
 
 function cleanUrl(url: string): string {
   return url.replace(postfixRE, "");
+}
+
+// For now we're not streaming the response (only dev mode)
+// TODO: stream the response
+async function toNodeServerResponse(response: Response, res: ServerResponse) {
+  response.headers.forEach((value, name) => {
+    res.setHeader(name, value);
+  });
+
+  res.write(await response.text());
+  res.end();
+}
+
+// Naive conversion from node request to fetch request
+function fromNodeIncomingMessage(req: IncomingMessage): Request {
+  const url = new URL(req.url!, "https://localhost:3000").href;
+  const request = new Request(url, {
+    method: req.method,
+    headers: (() => {
+      const headers = new Headers();
+      for (const [key, value] of Object.entries(req.headers)) {
+        headers.set(key, value as any);
+      }
+      return headers;
+    })(),
+  });
+
+  return request;
 }
 
 export const environmentNames = {
@@ -35,7 +71,7 @@ export default function vlotPlugin(options: Options): Plugin {
               copyPublicDir: true,
               emptyOutDir: true,
               rollupOptions: {
-                input: path.resolve(__dirname, options.clientEntry),
+                input: path.resolve(__dirname, options.client.entry),
                 output: {
                   entryFileNames: "static/[name].js",
                   chunkFileNames: "static/assets/[name]-[hash].js",
@@ -52,7 +88,7 @@ export default function vlotPlugin(options: Options): Plugin {
               copyPublicDir: false,
               emptyOutDir: true,
               rollupOptions: {
-                input: path.resolve(__dirname, options.ssrEntry),
+                input: path.resolve(__dirname, options.ssr.entry),
                 output: {
                   entryFileNames: "[name].js",
                   chunkFileNames: "assets/[name]-[hash].js",
@@ -64,7 +100,7 @@ export default function vlotPlugin(options: Options): Plugin {
           [environmentNames.rpc]: {
             build: {
               rollupOptions: {
-                input: path.resolve(__dirname, options.rpcEntry),
+                input: path.resolve(__dirname, options.rpc.entry),
               },
               outDir: "dist/rpc",
               emptyOutDir: false,
@@ -96,8 +132,18 @@ export default function vlotPlugin(options: Options): Plugin {
 
       server.middlewares.use(async (req, res, next) => {
         if (req.url?.startsWith("/rpc")) {
-          const entryRPC = await rpcRunner.import(options.rpcEntry);
-          entryRPC.handler({ req, res, next });
+          const rpcFetch = await rpcRunner.import(options.rpc.entry);
+
+          const handler = getRequestListener(rpcFetch.default);
+          await handler(req, res).then(
+            () => {
+              next();
+            },
+            (err) => {
+              console.error(err);
+              next(err);
+            },
+          );
           return;
         }
         next();
@@ -105,8 +151,6 @@ export default function vlotPlugin(options: Options): Plugin {
 
       return async () => {
         server.middlewares.use(async (req, res, next) => {
-          console.log("middleware", req.url);
-
           if (res.writableEnded) {
             return next();
           }
@@ -121,21 +165,10 @@ export default function vlotPlugin(options: Options): Plugin {
           }
 
           try {
-            // Best effort extraction of the head from vite's index transformation hook
-            let viteHead =
-              (await viteServer?.transformIndexHtml(
-                url,
-                `<html><head></head><body></body></html>`,
-              )) ?? "";
+            const ssrFetch = await ssrRunner.import(options.ssr.entry);
+            const response = await ssrFetch.default(fromNodeIncomingMessage(req));
 
-            viteHead = viteHead.substring(
-              viteHead.indexOf("<head>") + 6,
-              viteHead.indexOf("</head>"),
-            );
-
-            const entrySSR = await ssrRunner.import(options.ssrEntry);
-
-            await entrySSR.handler({ req, res, head: viteHead });
+            await toNodeServerResponse(response, res);
           } catch (e: any) {
             viteServer?.ssrFixStacktrace(e);
             console.info(e.stack);

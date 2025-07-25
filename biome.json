@@ -1,6 +1,11 @@
 {
   "files": {
-    "includes": ["./plugin.ts", "./src/**/*", "!**/*.gen.ts"]
+    "includes": [
+      "./server.js",
+      "./plugin.ts",
+      "./src/**/*",
+      "!**/*.gen.ts"
+    ]
   },
   "formatter": {
     "enabled": true,

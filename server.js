@@ -1,41 +1,34 @@
-import * as zlib from "node:zlib";
-import express from "express";
-import { handler as rpcHandler } from "./dist/rpc/entry-rpc.js";
-import { handler as ssrHandler } from "./dist/ssr/entry-ssr.js";
-import compression from "compression";
+import { serve } from "@hono/node-server";
+import { serveStatic } from "@hono/node-server/serve-static";
+import { Hono } from "hono";
+import { compress } from "hono/compress";
+import rpcFetch from "./dist/rpc/entry-rpc.js";
+import ssrFetch from "./dist/ssr/entry-ssr.js";
 
-export async function createServer() {
-  const app = express();
+const app = new Hono();
 
-  app.use(
-    compression({
-      brotli: {
-        flush: zlib.constants.BROTLI_OPERATION_FLUSH,
-      },
-      flush: zlib.constants.Z_SYNC_FLUSH,
-    }),
-  );
+app.use(async (c, next) => {
+  const start = performance.now();
+  await next();
+  const end = performance.now();
+  console.log(`${c.req.method} ${c.req.url} ${end - start}ms`);
+});
 
-  app.use(express.static("./dist/client"));
+app.use(compress());
 
-  app.use("/rpc*", async (req, res, next) => {
-    rpcHandler({ req, res, next });
-  });
+app.use("/*", serveStatic({ root: "./dist/client" }));
 
-  app.use("*", async (req, res, _next) => {
-    try {
-      await ssrHandler({ req, res });
-    } catch (e) {
-      console.info(e.stack);
-      res.status(500).end(e.stack);
-    }
-  });
+app.use("/rpc/*", async (c) => {
+  const response = await rpcFetch(c.req.raw);
+  return c.newResponse(response.body, response);
+});
 
-  return app;
-}
+app.use(async (c) => {
+  console.log("SSR", c.req.url);
+  const response = await ssrFetch(c.req.raw);
+  return c.newResponse(response.body, response);
+});
 
-createServer().then(async (app) =>
-  app.listen(3000, () => {
-    console.info("Client Server: http://localhost:3000");
-  }),
-);
+serve(app, (info) => {
+  console.log(`Listening on http://localhost:${info.port}`); // Listening on http://localhost:3000
+});

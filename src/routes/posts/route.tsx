@@ -2,7 +2,6 @@ import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/posts")({
   loader: async ({ context }) => {
-    console.info("Fetching posts...");
     await new Promise((r) => setTimeout(r, 300 + Math.round(Math.random() * 300)));
     const posts = await context.rpc.posts.list();
 

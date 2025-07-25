@@ -9,9 +9,16 @@ export default defineConfig({
     tanstackRouter({ target: "react", autoCodeSplitting: true }), 
     react(), 
     vlotPlugin({
-      clientEntry: "src/entry-client.tsx",
-      ssrEntry: "src/entry-ssr.tsx",
-      rpcEntry: "src/entry-rpc.ts",
+      client: {
+        entry: "src/entry-client.tsx",
+      },
+      ssr: {
+        entry: "src/entry-ssr.tsx",
+      },
+      rpc: {
+        entry: "src/entry-rpc.ts",
+        
+      },
     }),
   ],
 });

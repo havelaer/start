@@ -31,8 +31,8 @@ export const Route = createRootRouteWithContext<RouterContext>()({
         ? [
             {
               type: "module",
-              children: `import RefreshRuntime from "/@react-refresh"
-  RefreshRuntime.injectIntoGlobalHook(window)
+              children: `import {injectIntoGlobalHook} from "/@react-refresh"
+  injectIntoGlobalHook(window)
   window.$RefreshReg$ = () => {}
   window.$RefreshSig$ = () => (type) => type
   window.__vite_plugin_react_preamble_installed__ = true`,

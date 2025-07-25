@@ -14,7 +14,6 @@ const PostTypeSchema = z.object({
 });
 
 const listPosts = os.handler(async () => {
-  console.info("Server: Fetching posts...");
   const posts = await fetch("https://jsonplaceholder.typicode.com/posts")
     .then((d) => d.json() as Promise<Array<PostType>>)
     .then((d) => d.slice(0, 10));
@@ -23,7 +22,6 @@ const listPosts = os.handler(async () => {
 });
 
 const detailPost = os.input(PostTypeSchema.pick({ id: true })).handler(async ({ input }) => {
-  console.info("Server: Fetching post detail...", input.id);
   const res = await fetch(`https://jsonplaceholder.typicode.com/posts/${input.id}`);
 
   if (res.status === 404) throw new ORPCError("Post not found", { status: 404 });
