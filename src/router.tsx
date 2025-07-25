@@ -6,7 +6,6 @@ export function createRouter() {
   return createReactRouter({
     routeTree,
     context: {
-      headScripts: [],
       rpc: client,
     },
     defaultPreload: "intent",

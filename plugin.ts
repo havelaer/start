@@ -1,8 +1,7 @@
 import fs from "node:fs/promises";
-import type { IncomingMessage, ServerResponse } from "node:http";
 import path from "node:path";
+import { getRequestListener } from "@hono/node-server";
 import { createServerModuleRunner, type Plugin, type ViteDevServer } from "vite";
-import { serve, getRequestListener, type ServerType } from "@hono/node-server";
 
 export type ServerEntryHandler = (req: Request) => Promise<Response>;
 
@@ -20,34 +19,6 @@ const postfixRE = /[?#].*$/;
 
 function cleanUrl(url: string): string {
   return url.replace(postfixRE, "");
-}
-
-// For now we're not streaming the response (only dev mode)
-// TODO: stream the response
-async function toNodeServerResponse(response: Response, res: ServerResponse) {
-  response.headers.forEach((value, name) => {
-    res.setHeader(name, value);
-  });
-
-  res.write(await response.text());
-  res.end();
-}
-
-// Naive conversion from node request to fetch request
-function fromNodeIncomingMessage(req: IncomingMessage): Request {
-  const url = new URL(req.url!, "https://localhost:3000").href;
-  const request = new Request(url, {
-    method: req.method,
-    headers: (() => {
-      const headers = new Headers();
-      for (const [key, value] of Object.entries(req.headers)) {
-        headers.set(key, value as any);
-      }
-      return headers;
-    })(),
-  });
-
-  return request;
 }
 
 export const environmentNames = {
@@ -82,9 +53,7 @@ export default function vlotPlugin(options: Options): Plugin {
           },
           [environmentNames.ssr]: {
             build: {
-              // ssr: true,
               outDir: "dist/ssr",
-              // ssrEmitAssets: true,
               copyPublicDir: false,
               emptyOutDir: true,
               rollupOptions: {
@@ -134,16 +103,7 @@ export default function vlotPlugin(options: Options): Plugin {
         if (req.url?.startsWith("/rpc")) {
           const rpcFetch = await rpcRunner.import(options.rpc.entry);
 
-          const handler = getRequestListener(rpcFetch.default);
-          await handler(req, res).then(
-            () => {
-              next();
-            },
-            (err) => {
-              console.error(err);
-              next(err);
-            },
-          );
+          await getRequestListener(rpcFetch.default)(req, res);
           return;
         }
         next();
@@ -166,9 +126,8 @@ export default function vlotPlugin(options: Options): Plugin {
 
           try {
             const ssrFetch = await ssrRunner.import(options.ssr.entry);
-            const response = await ssrFetch.default(fromNodeIncomingMessage(req));
 
-            await toNodeServerResponse(response, res);
+            await getRequestListener(ssrFetch.default)(req, res);
           } catch (e: any) {
             viteServer?.ssrFixStacktrace(e);
             console.info(e.stack);
