@@ -7,11 +7,11 @@ export function createRouter() {
     routeTree,
     context: {
       rpc: client,
-      // Prevent TanStack Router Devtools from JSON.stringify-ing 
+      // Prevent TanStack Router Devtools from JSON.stringify-ing
       // the rpc client and accidentally calling it with `toJSON`.
       _: 0,
     },
-    defaultPreload: "intent",
+    defaultPreload: false,
     scrollRestoration: true,
   });
 }

@@ -1,18 +1,30 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { getRequestListener } from "@hono/node-server";
-import { createServerModuleRunner, type Plugin, type ViteDevServer } from "vite";
+import {
+  createServerModuleRunner,
+  type EnvironmentOptions,
+  type Plugin,
+  type ViteDevServer,
+} from "vite";
 
 export type ServerEntryHandler = (req: Request) => Promise<Response>;
 
-type EntryConfig = {
+type AppConfig = {
   entry: string;
+  environment?: (env: EnvironmentOptions) => EnvironmentOptions;
+};
+
+type APIConfig = {
+  entry: string;
+  route?: string;
+  environment?: (env: EnvironmentOptions) => EnvironmentOptions;
 };
 
 type Options = {
-  client: EntryConfig;
-  ssr: EntryConfig;
-  rpc: EntryConfig;
+  client: string | AppConfig;
+  ssr: string | AppConfig;
+  apis?: Record<string, string | APIConfig>;
 };
 
 const postfixRE = /[?#].*$/;
@@ -21,11 +33,22 @@ function cleanUrl(url: string): string {
   return url.replace(postfixRE, "");
 }
 
-export const environmentNames = {
-  client: "client",
-  ssr: "ssr",
-  rpc: "rpc",
-};
+function getEntry(config: string | AppConfig | APIConfig): string {
+  if (typeof config === "string") {
+    return config;
+  }
+  return config.entry;
+}
+
+function getEnvironment(
+  config: string | AppConfig | APIConfig,
+  environment: EnvironmentOptions,
+): EnvironmentOptions {
+  if (typeof config === "string") {
+    return environment;
+  }
+  return config.environment?.(environment) ?? environment;
+}
 
 export default function vlotPlugin(options: Options): Plugin {
   let viteServer: ViteDevServer | undefined;
@@ -35,14 +58,14 @@ export default function vlotPlugin(options: Options): Plugin {
     config() {
       return {
         environments: {
-          [environmentNames.client]: {
+          client: getEnvironment(options.client, {
             build: {
               outDir: "dist/client",
               emitAssets: true,
               copyPublicDir: true,
-              emptyOutDir: true,
+              emptyOutDir: false,
               rollupOptions: {
-                input: path.resolve(__dirname, options.client.entry),
+                input: path.resolve(__dirname, getEntry(options.client)),
                 output: {
                   entryFileNames: "static/[name].js",
                   chunkFileNames: "static/assets/[name]-[hash].js",
@@ -50,14 +73,15 @@ export default function vlotPlugin(options: Options): Plugin {
                 },
               },
             },
-          },
-          [environmentNames.ssr]: {
+          }),
+          ssr: getEnvironment(options.ssr, {
             build: {
               outDir: "dist/ssr",
               copyPublicDir: false,
-              emptyOutDir: true,
+              emptyOutDir: false,
+              ssrEmitAssets: false,
               rollupOptions: {
-                input: path.resolve(__dirname, options.ssr.entry),
+                input: path.resolve(__dirname, getEntry(options.ssr)),
                 output: {
                   entryFileNames: "[name].js",
                   chunkFileNames: "assets/[name]-[hash].js",
@@ -65,17 +89,25 @@ export default function vlotPlugin(options: Options): Plugin {
                 },
               },
             },
-          },
-          [environmentNames.rpc]: {
-            build: {
-              rollupOptions: {
-                input: path.resolve(__dirname, options.rpc.entry),
-              },
-              outDir: "dist/rpc",
-              emptyOutDir: false,
-              copyPublicDir: false,
-            },
-          },
+          }),
+          ...(options.apis
+            ? Object.entries(options.apis).reduce(
+                (apiEnvironments, [api, config]) => {
+                  apiEnvironments[api] = getEnvironment(config, {
+                    build: {
+                      rollupOptions: {
+                        input: path.resolve(__dirname, getEntry(config)),
+                      },
+                      outDir: `dist/${api}`,
+                      emptyOutDir: false,
+                      copyPublicDir: false,
+                    },
+                  });
+                  return apiEnvironments;
+                },
+                {} as Record<string, EnvironmentOptions>,
+              )
+            : {}),
         },
         builder: {
           async buildApp(builder) {
@@ -84,9 +116,13 @@ export default function vlotPlugin(options: Options): Plugin {
               force: true,
             });
             await Promise.all([
-              builder.build(builder.environments[environmentNames.client]),
-              builder.build(builder.environments[environmentNames.ssr]),
-              builder.build(builder.environments[environmentNames.rpc]),
+              builder.build(builder.environments.client),
+              builder.build(builder.environments.ssr),
+              ...(options.apis
+                ? Object.entries(options.apis).map(([api]) =>
+                    builder.build(builder.environments[api]),
+                  )
+                : []),
             ]);
           },
         },
@@ -95,19 +131,24 @@ export default function vlotPlugin(options: Options): Plugin {
     },
     async configureServer(server) {
       viteServer = server;
+      const ssrRunner = createServerModuleRunner(server.environments.ssr);
 
-      const ssrRunner = createServerModuleRunner(server.environments[environmentNames.ssr]);
-      const rpcRunner = createServerModuleRunner(server.environments[environmentNames.rpc]);
+      if (options.apis) {
+        Object.entries(options.apis).forEach(([api, config]) => {
+          const moduleRunner = createServerModuleRunner(server.environments[api]);
+          const route = typeof config !== "string" && config.route ? config.route : `/${api}`;
 
-      server.middlewares.use(async (req, res, next) => {
-        if (req.url?.startsWith("/rpc")) {
-          const rpcFetch = await rpcRunner.import(options.rpc.entry);
+          server.middlewares.use(async (req, res, next) => {
+            if (req.url?.startsWith(route)) {
+              const apiFetch = await moduleRunner.import(getEntry(config));
 
-          await getRequestListener(rpcFetch.default)(req, res);
-          return;
-        }
-        next();
-      });
+              await getRequestListener(apiFetch.default)(req, res);
+              return;
+            }
+            next();
+          });
+        });
+      }
 
       return async () => {
         server.middlewares.use(async (req, res, next) => {
@@ -125,7 +166,7 @@ export default function vlotPlugin(options: Options): Plugin {
           }
 
           try {
-            const ssrFetch = await ssrRunner.import(options.ssr.entry);
+            const ssrFetch = await ssrRunner.import(getEntry(options.ssr));
 
             await getRequestListener(ssrFetch.default)(req, res);
           } catch (e: any) {
@@ -138,12 +179,8 @@ export default function vlotPlugin(options: Options): Plugin {
       };
     },
     hotUpdate(ctx) {
-      // auto refresh if server is updated
-      if (
-        (this.environment.name === environmentNames.ssr ||
-          this.environment.name === environmentNames.rpc) &&
-        ctx.modules.length > 0
-      ) {
+      // auto refresh if ssr is updated
+      if (this.environment.name === "ssr" && ctx.modules.length > 0) {
         ctx.server.environments.client.hot.send({
           type: "full-reload",
         });

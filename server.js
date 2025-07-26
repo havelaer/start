@@ -7,26 +7,13 @@ import ssrFetch from "./dist/ssr/entry-ssr.js";
 
 const app = new Hono();
 
-app.use(async (c, next) => {
-  const start = performance.now();
-  await next();
-  const end = performance.now();
-  console.log(`${c.req.method} ${c.req.url} ${end - start}ms`);
-});
-
 app.use(compress());
 
-app.use("/*", serveStatic({ root: "./dist/client" }));
+app.use(serveStatic({ root: "./dist/client" }));
 
-app.use("/rpc/*", async (c) => {
-  const response = await rpcFetch(c.req.raw);
-  return c.newResponse(response.body, response);
-});
+app.use("/rpc/*", (c) => rpcFetch(c.req.raw));
 
-app.use(async (c) => {
-  const response = await ssrFetch(c.req.raw);
-  return c.newResponse(response.body, response);
-});
+app.use((c) => ssrFetch(c.req.raw));
 
 serve(app, (info) => {
   console.log(`Listening on http://localhost:${info.port}`); // Listening on http://localhost:3000
