@@ -13,7 +13,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
     links: [{ rel: "icon", href: "/images/favicon.ico" }],
     meta: [
       {
-        title: "TanStack Router SSR Basic File Based Streaming",
+        title: "Havelaer Start",
       },
       {
         charSet: "UTF-8",

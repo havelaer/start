@@ -24,7 +24,6 @@ app.use("/rpc/*", async (c) => {
 });
 
 app.use(async (c) => {
-  console.log("SSR", c.req.url);
   const response = await ssrFetch(c.req.raw);
   return c.newResponse(response.body, response);
 });
