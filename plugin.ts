@@ -1,10 +1,12 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { getRequestListener } from "@hono/node-server";
+import * as cheerio from "cheerio";
 import {
   createServerModuleRunner,
   type EnvironmentOptions,
   type Plugin,
+  type ResolvedConfig,
   type ViteDevServer,
 } from "vite";
 
@@ -50,17 +52,42 @@ function getEnvironment(
   return config.environment?.(environment) ?? environment;
 }
 
-export default function vlotPlugin(options: Options): Plugin {
+function extractHtmlScripts(html: string): Array<{ content?: string; src?: string }> {
+  const $ = cheerio.load(html);
+  const scripts: Array<{ content?: string; src?: string }> = [];
+
+  $("script").each((_, element) => {
+    const src = $(element).attr("src");
+    const content = $(element).html() ?? undefined;
+    scripts.push({
+      src,
+      content,
+    });
+  });
+
+  return scripts;
+}
+
+export const clientEntryId = "virtual:framework/entry-client-id";
+export const viteHeadId = "virtual:framework/vite-head";
+
+export default function frameworkPlugin(options: Options): Plugin {
   let viteServer: ViteDevServer | undefined;
+  let viteScripts: Array<{ content?: string; src?: string }> | undefined;
+  let resolvedConfig: ResolvedConfig;
+  let buildClientEntry: string | undefined;
 
   return {
-    name: "vlot-plugin",
-    config() {
+    name: "vite-plugin-framework",
+    sharedDuringBuild: true,
+    config(config) {
+      const outDirRoot = config.build?.outDir ?? "dist";
+
       return {
         environments: {
           client: getEnvironment(options.client, {
             build: {
-              outDir: "dist/client",
+              outDir: `${outDirRoot}/client`,
               emitAssets: true,
               copyPublicDir: true,
               emptyOutDir: false,
@@ -76,7 +103,7 @@ export default function vlotPlugin(options: Options): Plugin {
           }),
           ssr: getEnvironment(options.ssr, {
             build: {
-              outDir: "dist/ssr",
+              outDir: `${outDirRoot}/ssr`,
               copyPublicDir: false,
               emptyOutDir: false,
               ssrEmitAssets: false,
@@ -98,7 +125,7 @@ export default function vlotPlugin(options: Options): Plugin {
                       rollupOptions: {
                         input: path.resolve(__dirname, getEntry(config)),
                       },
-                      outDir: `dist/${api}`,
+                      outDir: `${outDirRoot}/${api}`,
                       emptyOutDir: false,
                       copyPublicDir: false,
                     },
@@ -111,12 +138,13 @@ export default function vlotPlugin(options: Options): Plugin {
         },
         builder: {
           async buildApp(builder) {
-            await fs.rm(path.resolve(builder.config.root, "dist"), {
+            await fs.rm(path.resolve(builder.config.root, outDirRoot), {
               recursive: true,
               force: true,
             });
+            await builder.build(builder.environments.client);
+
             await Promise.all([
-              builder.build(builder.environments.client),
               builder.build(builder.environments.ssr),
               ...(options.apis
                 ? Object.entries(options.apis).map(([api]) =>
@@ -128,6 +156,9 @@ export default function vlotPlugin(options: Options): Plugin {
         },
         appType: "custom",
       };
+    },
+    configResolved(config) {
+      resolvedConfig = config;
     },
     async configureServer(server) {
       viteServer = server;
@@ -150,6 +181,11 @@ export default function vlotPlugin(options: Options): Plugin {
         });
       }
 
+      const templateHtml = `<html><head></head><body></body></html>`;
+      const transformedHtml = await viteServer.transformIndexHtml("/", templateHtml);
+
+      viteScripts = extractHtmlScripts(transformedHtml);
+
       return async () => {
         server.middlewares.use(async (req, res, next) => {
           if (res.writableEnded) {
@@ -167,7 +203,6 @@ export default function vlotPlugin(options: Options): Plugin {
 
           try {
             const ssrFetch = await ssrRunner.import(getEntry(options.ssr));
-
             await getRequestListener(ssrFetch.default)(req, res);
           } catch (e: any) {
             viteServer?.ssrFixStacktrace(e);
@@ -179,11 +214,48 @@ export default function vlotPlugin(options: Options): Plugin {
       };
     },
     hotUpdate(ctx) {
-      // auto refresh if ssr is updated
+      // auto refresh client if ssr is updated
       if (this.environment.name === "ssr" && ctx.modules.length > 0) {
         ctx.server.environments.client.hot.send({
           type: "full-reload",
         });
+      }
+    },
+    renderChunk(_code, chunk) {
+      if (this.environment.name !== "client") return;
+
+      const entry = this.environment.config.build.rollupOptions.input;
+
+      if (chunk.isEntry && chunk.facadeModuleId === entry) {
+        buildClientEntry = chunk.fileName;
+      }
+    },
+    resolveId(id) {
+      if (id === clientEntryId) {
+        return `\0${clientEntryId}`;
+      }
+
+      if (id === viteHeadId) {
+        return `\0${viteHeadId}`;
+      }
+    },
+    async load(id) {
+      if (id === `\0${clientEntryId}`) {
+        const { base } = resolvedConfig;
+
+        if (resolvedConfig.command === "build" && this.environment.name !== "client") {
+          return `export default ${JSON.stringify(`${base}${buildClientEntry}`)}`;
+        }
+
+        return `export default ${JSON.stringify(`/${getEntry(options.client)}`)}`;
+      }
+
+      if (id === `\0${viteHeadId}`) {
+        if (resolvedConfig.command === "build") {
+          return `export default []`;
+        }
+
+        return `export default ${JSON.stringify(viteScripts)}`;
       }
     },
   };

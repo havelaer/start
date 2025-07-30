@@ -1,3 +1,5 @@
+import clientEntryId from "virtual:framework/entry-client-id";
+import viteHead from "virtual:framework/vite-head";
 import {
   createRootRouteWithContext,
   HeadContent,
@@ -24,28 +26,17 @@ export const Route = createRootRouteWithContext<RouterContext>()({
       },
     ],
     scripts: [
+      ...viteHead.map((script: any) => ({
+        type: "module",
+        src: script.src,
+        children: script.content,
+      })),
       {
         src: "https://unpkg.com/@tailwindcss/browser@4",
       },
-      ...(!import.meta.env.PROD
-        ? [
-            {
-              type: "module",
-              children: `import {injectIntoGlobalHook} from "/@react-refresh"
-  injectIntoGlobalHook(window)
-  window.$RefreshReg$ = () => {}
-  window.$RefreshSig$ = () => (type) => type
-  window.__vite_plugin_react_preamble_installed__ = true`,
-            },
-            {
-              type: "module",
-              src: "/@vite/client",
-            },
-          ]
-        : []),
       {
         type: "module",
-        src: import.meta.env.PROD ? "/static/entry-client.js" : "/src/entry-client.tsx",
+        src: clientEntryId,
       },
     ],
   }),
