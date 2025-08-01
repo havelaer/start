@@ -27,7 +27,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.1.2",
-    "@havelaer/vite-ssr": "^0.0.2",
+    "@havelaer/vite-plugin-ssr": "^0.0.3",
     "@tanstack/react-router-devtools": "^1.128.0",
     "@types/react": "^19.0.8",
     "@types/react-dom": "^19.0.1",
