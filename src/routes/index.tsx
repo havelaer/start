@@ -1,4 +1,9 @@
 import { Await, createFileRoute } from "@tanstack/react-router";
+import { lazy } from "react";
+
+const LazyGreeting = lazy(() =>
+  import("../components/Greeting/Greeting").then((m) => ({ default: m.Greeting })),
+);
 
 export const Route = createFileRoute("/")({
   loader: () => ({
@@ -13,7 +18,7 @@ function IndexComponent() {
 
   return (
     <div className="p-2">
-      <h3>Welcome Home!</h3>
+      <LazyGreeting name="John" />
       <p>Data: {data.date.getDate()}</p>
       <Await promise={data.deferred} fallback="Loading...">
         {(data) => <p>Deferred: {new Date(data.date).getDate()}</p>}

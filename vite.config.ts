@@ -1,7 +1,8 @@
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
+import { vanillaExtractPlugin } from '@vanilla-extract/vite-plugin';
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
-import surf from "./plugin";
+import ssr from "@havelaer/vite-ssr/plugin";
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -11,7 +12,8 @@ export default defineConfig({
   plugins: [
     tanstackRouter({ target: "react", autoCodeSplitting: true }), 
     react(), 
-    surf({
+    vanillaExtractPlugin(),
+    ssr({
       client: "src/entry-client.tsx",
       ssr: "src/entry-ssr.tsx",
       apis: {

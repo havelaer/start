@@ -1,6 +1,6 @@
 import { RPCHandler } from "@orpc/server/fetch";
 import { CORSPlugin } from "@orpc/server/plugins";
-import { rpcRouter } from "./server/rpc/router";
+import { rpcRouter } from "./rpc/router";
 
 const rpcHandler = new RPCHandler(rpcRouter, {
   plugins: [new CORSPlugin()],

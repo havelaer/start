@@ -6,6 +6,7 @@
     "dev": "vite dev",
     "build": "vite build --app",
     "serve": "node server",
+    "format": "biome format",
     "debug": "node --inspect-brk server",
     "lint": "biome check ."
   },
@@ -20,18 +21,18 @@
     "@tanstack/react-router": "^1.128.0",
     "@tanstack/router-plugin": "^1.128.0",
     "hono": "^4.8.7",
-    "isbot": "^5.1.22",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "zod": "^4.0.5"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.1.2",
+    "@havelaer/vite-ssr": "^0.0.2",
     "@tanstack/react-router-devtools": "^1.128.0",
     "@types/react": "^19.0.8",
     "@types/react-dom": "^19.0.1",
+    "@vanilla-extract/vite-plugin": "^5.1.1",
     "@vitejs/plugin-react": "^4.3.4",
-    "cheerio": "^1.1.2",
     "typescript": "^5.7.2",
     "vite": "^7.0.5"
   }

@@ -1,4 +1,4 @@
-import "./server/rpc/client";
+import "./rpc/client";
 import {
   createRequestHandler,
   RouterServer,

@@ -1,5 +1,3 @@
-import clientEntryId from "virtual:framework/entry-client-id";
-import viteHead from "virtual:framework/vite-head";
 import {
   createRootRouteWithContext,
   HeadContent,
@@ -8,6 +6,7 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
+import clientEntryUrl from "../entry-client.tsx?url";
 import type { RouterContext } from "../routerContext";
 
 export const Route = createRootRouteWithContext<RouterContext>()({
@@ -26,18 +25,11 @@ export const Route = createRootRouteWithContext<RouterContext>()({
       },
     ],
     scripts: [
-      ...viteHead.map((script: any) => ({
-        type: "module",
-        src: script.src,
-        children: script.content,
-      })),
-      {
-        src: "https://unpkg.com/@tailwindcss/browser@4",
-      },
-      {
-        type: "module",
-        src: clientEntryId,
-      },
+      // TODO: restore when router ssr bug is fixed: https://github.com/TanStack/router/issues/4585
+      // {
+      //   type: "module",
+      //   src: clientEntryUrl,
+      // },
     ],
   }),
   component: RootComponent,
@@ -48,6 +40,7 @@ function RootComponent() {
     <html lang="en">
       <head>
         <HeadContent />
+        <script type="module" src={clientEntryUrl} />
       </head>
       <body>
         <div>
