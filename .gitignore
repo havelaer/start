@@ -1,5 +1,18 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+
 node_modules
-.DS_Store
 dist
-*.local
-.tanstack
+dist-ssr
+
+# Environment variables
+.env
+.env.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store

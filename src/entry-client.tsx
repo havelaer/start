@@ -1,7 +1,5 @@
-import { RouterClient } from "@tanstack/react-router/ssr/client";
-import { hydrateRoot } from "react-dom/client";
-import { createRouter } from "./router";
+import { createRoot } from "react-dom/client";
+import "./index.css";
+import App from "./App.tsx";
 
-const router = createRouter();
-
-hydrateRoot(document, <RouterClient router={router} />);
+createRoot(document.getElementById("root")!).render(<App />);
