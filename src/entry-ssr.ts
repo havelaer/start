@@ -1,18 +1,6 @@
-import type { Context } from "@havelaer/vite-plugin-ssr";
+import type { Context, HtmlAssets } from "@havelaer/vite-plugin-ssr";
 
-const scripts = (js: Context["assets"]["js"]) =>
-  js
-    .map((js: any) =>
-      "path" in js
-        ? `<script src="${js.path}" type="module"></script>`
-        : `<script type="module">${js.content}</script>`,
-    )
-    .join("\n");
-
-const styles = (css: Context["assets"]["css"]) =>
-  css.map((css: any) => `<link rel="stylesheet" href="${css.path}" />`).join("\n");
-
-const html = (assets: Context["assets"]) => `
+const html = (assets: HtmlAssets) => `
 <!doctype html>
 <html lang="en">
   <head>
@@ -20,11 +8,11 @@ const html = (assets: Context["assets"]) => `
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Starter</title>
-    ${styles(assets.css)}
+    ${assets.css.map((css) => `<link rel="stylesheet" href="${css}" />`).join("\n")}
   </head>
   <body>
     <div id="root"></div>
-    ${scripts(assets.js)}
+    <script src="${assets.js}" type="module"></script>
   </body>
 </html>
 `;
