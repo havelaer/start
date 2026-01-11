@@ -5,8 +5,8 @@ import { createTanstackQueryUtils } from "@orpc/tanstack-query";
 import type { router } from "../.api/router";
 
 const link = new RPCLink({
-  url: `${window.location.origin}/api`,
-  headers: { Authorization: "Bearer token" },
+    url: `${window.location.origin}/api`,
+    headers: { Authorization: "Bearer token" },
 });
 
 export const client: RouterClient<typeof router> = createORPCClient(link);

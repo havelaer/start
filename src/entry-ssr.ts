@@ -18,9 +18,9 @@ const html = (assets: HtmlAssets) => `
 `;
 
 export default async function fetch(_request: Request, ctx: Context): Promise<Response> {
-  return new Response(html(ctx.assets), {
-    headers: {
-      "Content-Type": "text/html",
-    },
-  });
+    return new Response(html(ctx.assets), {
+        headers: {
+            "Content-Type": "text/html",
+        },
+    });
 }
